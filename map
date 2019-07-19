@@ -4,17 +4,14 @@ suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(rasterVis))
 
 opt.list <- list(
-    make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER',
-                help = 'The raster band to plot (default is %default).')
+	make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER', help = 'The raster band to plot (default is %default).'),
+	make_option(c('-x','--xsize'), type = 'integer', metavar = 'INTEGER', default = 7, help = 'Width of the plotting window in inches (default is %default).'),
+	make_option(c('-y','--ysize'), type = 'integer', metavar = 'INTEGER', default = 7, help = 'Height of the plotting window in inches (default is %default).')
 )
 
 opt.parser <- OptionParser(option_list = opt.list,
-                           prog = 'map',
-                           usage = 'usage: %prog <raster>\n',
-                           description = paste0('Quickly display a map of raster file from the command line.\n\n',
-                                                'Arguments:\n',
-                                                '\t<raster>\n',
-                                                '\t\tRaster file path.'))
+						   usage = 'usage: %prog <raster>\n',
+						   description = 'Quickly display a map of raster file from the command line.\n\nArguments:\n\t<raster>\n\t\tRaster file path.')
 
 arguments <- parse_args(opt.parser, positional_arguments = 1)
 pos.args <- arguments$args
@@ -22,10 +19,12 @@ opt.args <- arguments$options
 
 f <- pos.args[1]
 b <- opt.args$band
+w <- opt.args$xsize
+h <- opt.args$ysize
 
 r <- raster(f, band = b)
 
-X11()
+X11(width = w, height = h)
 levelplot(r, margin = F)
 message('Press return to close map...')
 invisible(readLines('stdin', n = 1))
