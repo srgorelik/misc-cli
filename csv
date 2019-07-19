@@ -1,0 +1,177 @@
+#!/usr/bin/env Rscript
+
+# csv - a linux CLI for nicely displaying and summarizing CSV files
+
+suppressPackageStartupMessages(library(optparse))
+suppressPackageStartupMessages(library(data.table))
+
+file_ext <- function(x) {
+	pos <- regexpr("\\.([[:alnum:]]+)$", x)
+	tolower(ifelse(pos > -1L, substring(x, pos + 1L), ""))
+}
+
+opt.list <- list(
+	make_option(c('-a','--all'), action = 'store_true', default = FALSE,
+				help = 'Print all rows.'),
+	make_option(c('-t','--tail'), action = 'store_true', default = FALSE,
+				help = 'Print only tail. By default only the head is printed.\n\t\tIgnored if the [-a|--all] flag is set.'),
+	make_option(c('-n','--num-rows'), type = 'integer', default = 6, metavar = 'INTEGER',
+				help = 'Specify number of rows to print (default is %default). Ignored\n\t\tif the [-a|--all] flag is set.'),
+	make_option(c('-s','--summary'), action = 'store_true', default = FALSE,
+				help = 'Summarize all rows by column.'),
+	make_option(c('-c','--col-names'), action = 'store_true', default = FALSE,
+				help = 'Only print column names.'),
+	make_option(c('-k','--keep-cols'), type = 'character', default = NULL, metavar = 'STRING',
+				help = 'Column selection. Provde names or numbers of columns to keep\n\t\tor drop, separated by commas (e.g., "var1,var5", or "1:4,8").\n\t\tUse "!" to drop columns (e.g., "!1,!5" or "!var1,!var5").'),
+	make_option(c('-d','--drop-cols'), type = 'character', default = NULL, metavar = 'STRING',
+				help = 'Column selection. Provde names or numbers of columns to keep\n\t\tor drop, separated by commas (e.g., "var1,var5", or "1:4,8").\n\t\tUse "!" to drop columns (e.g., "!1,!5" or "!var1,!var5").'),
+	make_option(c('-D','--dims'), action = 'store_true', default = FALSE,
+				help = 'Only print CSV dimensions (i.e., number of rows and columns).'),
+	make_option(c('-N','--no-header'), action = 'store_true', default = FALSE,
+				help = 'Flag that CSV has no header row.'),
+	make_option(c('-v','--verbose'), action = 'store_true', default = FALSE,
+				help = 'Prints progress and information messages.')
+)
+
+opt.parser <- OptionParser(option_list = opt.list,
+						   usage = 'usage: %prog <input.csv> [options]\n',
+						   description = paste0('A simple command-line tool to print a CSV file to the terminal.\n\n',
+						   					 'Arguments:\n',
+						   					 '\t<input.csv>\n',
+						   					 '\t\tPath to CSV file.'))
+
+arguments <- parse_args(opt.parser, positional_arguments = T)
+pos.args <- arguments$args
+opt.args <- arguments$options
+
+csv.file <- pos.args[1]
+print.all <- opt.args$all
+print.tail <- opt.args$tail
+print.nrows <- opt.args$`num-rows`
+print.sum <- opt.args$summary
+print.colnames <- opt.args$`col-names`
+keep.cols <- opt.args$`keep-cols`
+drop.cols <- opt.args$`drop-cols`
+print.dims <- opt.args$dims
+hdr.exists <- !opt.args$`no-header`
+verbose <- opt.args$verbose
+
+if (!is.null(keep.cols) & !is.null(drop.cols)) stop('use either "-k|--keep-cols" or "-d|--drop-cols", but not both. ')
+
+if (is.na(csv.file)) {
+	print_help(opt.parser)
+} else if (!file.exists(csv.file)) {
+	stop('input file does not exist.')
+} else if (file_ext(csv.file) != 'csv') {
+	stop('input file must be a CSV.')
+} else {
+	if (verbose) cat(paste('Input table exists ...'), fill = T)
+
+	tmp.df <- fread(csv.file, header = F, nrows = 1, showProgress = F, data.table = F)
+
+	if (hdr.exists) {
+		hdr <- as.character(as.vector(tmp.df[1,]))
+	} else {
+		hdr <- colnames(tmp.df)
+	}
+
+	if (print.colnames) {
+		if (hdr.exists) {
+			cat(paste(hdr, collapse = ', '), fill = T)
+		} else {
+			stop('no header.')
+		}
+	} else {
+
+		# count total number of rows in CSV
+		tot.num.rows <- as.numeric(system(paste('sed -n "$="', csv.file), intern = T)) # includes header
+		if (hdr.exists) tot.num.rows <- tot.num.rows - 1
+
+		if (print.dims) {
+			cat(paste(tot.num.rows, 'rows,', length(hdr), 'columns'), fill = T)
+		} else {
+
+			if (print.nrows > tot.num.rows) {
+				print.all <- T
+			}
+
+			if (hdr.exists) {
+				skip.nrows <- 1 # skip header
+			} else {
+				skip.nrows <- 0
+			}
+
+			if (print.all | print.sum) {
+				print.nrows <- Inf
+				substr <- 'full'
+			} else if (print.tail) {
+				skip.nrows <- tot.num.rows - print.nrows + skip.nrows
+				substr <- paste('last', print.nrows, 'rows of')
+			} else {
+				tot.num.rows <- print.nrows
+				substr <- paste('first', print.nrows, 'rows of')
+			}
+
+			# get total number of columns
+			tot.num.cols <- length(hdr)
+			cols.num <- 1:tot.num.cols
+
+			if (!is.null(keep.cols) | !is.null(drop.cols)) {
+
+				if (!is.null(keep.cols)) user.cols <- keep.cols
+				if (!is.null(drop.cols)) user.cols <- drop.cols
+
+				# split input into vector of strings
+				cols.splt <- unlist(strsplit(user.cols, ','))
+
+				# if a number sequence exists in vector, expand it
+				cols.seq <- eval(parse(text = cols.splt[grepl(':', cols.splt)]))
+
+				# combine sequence back with other elements of vector
+				cols.str <- c(cols.seq, cols.splt[!grepl(':', cols.splt)])
+
+				# convert vector from character to numeric
+				cols.num <- suppressWarnings(as.numeric(cols.str))
+
+				# count number of NAs created when converting from character to numeric
+				cols.na.cnt <- sum(is.na(cols.num))
+
+				# if no NAs, then user provided column numbers, otherwise user provided column names
+				if (cols.na.cnt == 0) {
+					if (!all(abs(cols.num) %in% 1:tot.num.cols)) stop('all columns must exist in CSV.')
+				} else if (cols.na.cnt == length(cols.str)) {
+					if (!all(gsub('^-', '', cols.str) %in% hdr)) stop('all columns must exist in CSV.')
+					cols.num <- charmatch(cols.str, hdr) # return column numbers to keep, in ascending order
+				} else {
+					stop('must provide either column names or numbers, not both.')
+				}
+
+				# remove duplicate column selections
+				cols.num <- unique(cols.num)
+
+				# invert column selection if user chose to drop columns
+				if (!is.null(drop.cols)) cols.num <- (1:tot.num.cols)[-cols.num]
+
+				# final column name selection
+				hdr <- hdr[cols.num]
+
+			}
+
+			if (verbose) cat(paste('Reading', substr, 'table ...'), fill = T)
+			df <- fread(csv.file, select = cols.num, nrows = print.nrows, skip = skip.nrows, header = F, col.names = hdr, showProgress = verbose, data.table = F, stringsAsFactors = T)
+
+			width <- system('tput cols', intern = T)
+			options(width = width)
+
+			if (print.sum) {
+				if (verbose) cat('Summarizing table ...', fill = T)
+				print(summary(df))
+			} else {
+				if (verbose) cat('Printing table ...', fill = T)
+				if (!hdr.exists) skip.nrows <- skip.nrows + 1
+				print.data.frame(df, row.names = as.character(skip.nrows:tot.num.rows))
+			}
+		}
+	}
+}
+

@@ -1,0 +1,31 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library(optparse))
+suppressPackageStartupMessages(library(rasterVis))
+
+opt.list <- list(
+    make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER',
+                help = 'The raster band to plot (default is %default).')
+)
+
+opt.parser <- OptionParser(option_list = opt.list,
+                           prog = 'map',
+                           usage = 'usage: %prog <raster>\n',
+                           description = paste0('Quickly display a map of raster file from the command line.\n\n',
+                                                'Arguments:\n',
+                                                '\t<raster>\n',
+                                                '\t\tRaster file path.'))
+
+arguments <- parse_args(opt.parser, positional_arguments = 1)
+pos.args <- arguments$args
+opt.args <- arguments$options
+
+f <- pos.args[1]
+b <- opt.args$band
+
+r <- raster(f, band = b)
+
+X11()
+levelplot(r, margin = F)
+message('Press return to close map...')
+invisible(readLines('stdin', n = 1))

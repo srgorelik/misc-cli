@@ -1,0 +1,25 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library(optparse))
+
+opt.list <- list(
+     make_option(c('-r','--round'), type = 'integer', default = 2, metavar = 'INTEGER',
+     help = 'Number of decimal places (default is %default)')
+)
+
+opt.parser <- OptionParser(option_list = opt.list,
+                           usage = 'usage: %prog <expression>\n',
+                           description = paste0('Evaluates a mathematical expression.\n\n',
+                           'Arguments:\n',
+                           '\t<expression>\n',
+                           '\t\tA mathematical expression to evaluate (e.g., \"5/10\")'))
+
+arguments <- parse_args(opt.parser, positional_arguments = 1)
+pos.args <- arguments$args
+opt.args <- arguments$options
+
+math.str <- pos.args[1]
+n.digits <- opt.args$round
+
+result <- round(eval(parse(text = math.str)), n.digits)
+cat(result, fill = T)
