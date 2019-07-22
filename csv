@@ -29,6 +29,8 @@ opt.list <- list(
 				help = 'Only print CSV dimensions (i.e., number of rows and columns).'),
 	make_option(c('-N','--no-header'), action = 'store_true', default = FALSE,
 				help = 'Flag that CSV has no header row.'),
+	make_option(c('-i','--remove-index'), action = 'store_true', default = FALSE,
+				help = 'Do not print row index.'),
 	make_option(c('-v','--verbose'), action = 'store_true', default = FALSE,
 				help = 'Prints progress and information messages.')
 )
@@ -54,6 +56,7 @@ keep.cols <- opt.args$`keep-cols`
 drop.cols <- opt.args$`drop-cols`
 print.dims <- opt.args$dims
 hdr.exists <- !opt.args$`no-header`
+rem.ind <- opt.args$`remove-index`
 verbose <- opt.args$verbose
 
 if (!is.null(keep.cols) & !is.null(drop.cols)) stop('use either "-k|--keep-cols" or "-d|--drop-cols", but not both. ')
@@ -169,7 +172,12 @@ if (is.na(csv.file)) {
 			} else {
 				if (verbose) cat('Printing table ...', fill = T)
 				if (!hdr.exists) skip.nrows <- skip.nrows + 1
-				print.data.frame(df, row.names = as.character(skip.nrows:tot.num.rows))
+				if (rem.ind) {
+					row.names <- F
+				} else {
+					row.names <- as.character(skip.nrows:tot.num.rows)
+				}
+				print.data.frame(df, row.names = row.names)
 			}
 		}
 	}
