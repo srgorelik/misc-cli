@@ -5,8 +5,8 @@ suppressPackageStartupMessages(library(rasterVis))
 
 opt.list <- list(
 	make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER', help = 'The raster band to plot (default is %default).'),
-	make_option(c('-x','--xsize'), type = 'integer', metavar = 'INTEGER', default = 7, help = 'Width of the plotting window in inches (default is %default).'),
-	make_option(c('-y','--ysize'), type = 'integer', metavar = 'INTEGER', default = 7, help = 'Height of the plotting window in inches (default is %default).')
+	make_option(c('-x','--xsize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the X direction (i.e., width).'),
+	make_option(c('-y','--ysize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the Y direction (i.e., height).')
 )
 
 opt.parser <- OptionParser(option_list = opt.list,
@@ -23,6 +23,17 @@ w <- opt.args$xsize
 h <- opt.args$ysize
 
 r <- raster(f, band = b)
+nrow <- nrow(r)
+ncol <- ncol(r)
+
+if (is.null(w) & is.null(h)) {
+	w <- 9
+	h <- nrow * (w / ncol)
+} else if (is.null(w) & !is.null(h)) {
+	w <- ncol * (h / nrow)
+} else if (!is.null(w) & is.null(h)) {
+	h <- nrow * (w / ncol)
+}
 
 c <- colorRampPalette(c('#0000AA','#0055FF','#00AAFF','#55FFFF','#AAFFAA','#FFFF55','#FFAA00','#FF5500','#AA0000'))
 
