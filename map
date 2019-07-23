@@ -24,7 +24,9 @@ h <- opt.args$ysize
 
 r <- raster(f, band = b)
 
+c <- colorRampPalette(c('#0000AA','#0055FF','#00AAFF','#55FFFF','#AAFFAA','#FFFF55','#FFAA00','#FF5500','#AA0000'))
+
 X11(width = w, height = h)
-levelplot(r, margin = F)
+levelplot(r, margin = F, col.regions = 	c)
 message('Press return to close map...')
 invisible(readLines('stdin', n = 1))
