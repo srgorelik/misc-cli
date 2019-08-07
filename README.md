@@ -8,3 +8,4 @@ Currently, all of them require [R](https://cran.r-project.org/) and the [optpars
 + [map](./map) - display a raster file (also requires the [rasterVis](https://oscarperpinan.github.io/rastervis/) package).
 + [math](./math) - command-line math.
 
+View usage/help for any tool with `-h` or `--help`.
