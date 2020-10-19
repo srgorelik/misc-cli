@@ -36,8 +36,9 @@ if (is.null(w) & is.null(h)) {
 }
 
 c <- colorRampPalette(c('#0000AA','#0055FF','#00AAFF','#55FFFF','#AAFFAA','#FFFF55','#FFAA00','#FF5500','#AA0000'))
+n <- basename(f)
 
 X11(width = w, height = h)
-levelplot(r, margin = F, col.regions = 	c)
+levelplot(r, margin = F, col.regions = 	c, main = n)
 message('Press return to close map...')
 invisible(readLines('stdin', n = 1))
