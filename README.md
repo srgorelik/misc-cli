@@ -1,4 +1,4 @@
-# misc
+# misc-cli
 
 Miscellaneous tools/scripts meant for the linux command line.
 
