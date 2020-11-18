@@ -62,17 +62,18 @@ cp.spe <- c('#D53E4F','#F46D43','#FDAE61','#FEE08B','#FFFFBF','#E6F598','#ABDDA4
 
 # select color palette
 c <- switch(p,
-			'viridis' = cp.vir,
-			'magma' = cp.mag,
-			'inferno' = cp.inf,
-			'plasma' = cp.pla,
-			'rainbow' = cp.rai,
-			'terrain' = cp.ter,
-			'grayscale' = cp.gry,
-			'jet' = cp.jet,
-			'matlab' = cp.mat,
-			'blue2red' = cp.b2r,
-			'spectral' = cp.spe)
+	'viridis' = cp.vir,
+	'magma' = cp.mag,
+	'inferno' = cp.inf,
+	'plasma' = cp.pla,
+	'rainbow' = cp.rai,
+	'terrain' = cp.ter,
+	'grayscale' = cp.gry,
+	'jet' = cp.jet,
+	'matlab' = cp.mat,
+	'blue2red' = cp.b2r,
+	'spectral' = cp.spe
+)
 
 if (is.null(c)) stop('incorrect color palette choice.', call. = F)
 
