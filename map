@@ -1,10 +1,17 @@
 #!/usr/bin/env Rscript
 
+# displays raster from command line
+# written by seth gorelik
+
 suppressPackageStartupMessages(library(optparse))
+suppressPackageStartupMessages(library(raster))
 suppressPackageStartupMessages(library(rasterVis))
 
+# define CLI parameters
 opt.list <- list(
 	make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER', help = 'The raster band to plot (default is %default).'),
+	make_option(c('-p','--palette'), type = 'character', default = 'jet', metavar = 'CHARACTER', help = 'Color palette. Options are: jet, viridis, magma, inferno, plasma, rainbow, terrain, grayscale, matlab, blue2red, spectral (default is %default).'),
+	make_option(c('-r','--reverse'), type = 'logical', action = 'store_true', default = F, help = 'Reverse color palette direction.'),
 	make_option(c('-x','--xsize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the X direction (i.e., width).'),
 	make_option(c('-y','--ysize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the Y direction (i.e., height).')
 )
@@ -13,19 +20,24 @@ opt.parser <- OptionParser(option_list = opt.list,
 						   usage = 'usage: %prog <raster>\n',
 						   description = 'Quickly display a map of raster file from the command line.\n\nArguments:\n\t<raster>\n\t\tRaster file path.')
 
+# read user parameters
 arguments <- parse_args(opt.parser, positional_arguments = 1)
 pos.args <- arguments$args
 opt.args <- arguments$options
 
 f <- pos.args[1]
 b <- opt.args$band
+p <- opt.args$palette
+r <- opt.args$reverse
 w <- opt.args$xsize
 h <- opt.args$ysize
 
-r <- raster(f, band = b)
-nrow <- nrow(r)
-ncol <- ncol(r)
+# read raster
+ras <- raster(f, band = b)
+nrow <- nrow(ras)
+ncol <- ncol(ras)
 
+# define window size
 if (is.null(w) & is.null(h)) {
 	w <- 9
 	h <- nrow * (w / ncol)
@@ -35,10 +47,44 @@ if (is.null(w) & is.null(h)) {
 	h <- nrow * (w / ncol)
 }
 
-c <- colorRampPalette(c('#0000AA','#0055FF','#00AAFF','#55FFFF','#AAFFAA','#FFFF55','#FFAA00','#FF5500','#AA0000'))
-n <- basename(f)
+# define color palettes
+cp.vir <- c('#440154FF','#472D7BFF','#3B528BFF','#2C728EFF','#21908CFF','#27AD81FF','#5DC863FF','#AADC32FF','#FDE725FF') # viridis::viridis(9)
+cp.mag <- c('#000004FF','#1D1147FF','#51127CFF','#822681FF','#B63679FF','#E65164FF','#FB8861FF','#FEC287FF','#FCFDBFFF') # viridis::magma(9)
+cp.inf <- c('#000004FF','#210C4AFF','#56106EFF','#89226AFF','#BB3754FF','#E35932FF','#F98C0AFF','#F9C932FF','#FCFFA4FF') # viridis::inferno(9)
+cp.pla <- c('#0D0887FF','#4C02A1FF','#7E03A8FF','#A92395FF','#CC4678FF','#E56B5DFF','#F89441FF','#FDC328FF','#F0F921FF') # viridis::plasma(9)
+cp.rai <- c('#FF0000FF','#FFAA00FF','#AAFF00FF','#00FF00FF','#00FFAAFF','#00AAFFFF','#0000FFFF','#AA00FFFF','#FF00AAFF') # rainbow(9)
+cp.ter <- c('#00A600FF','#3EBB00FF','#8BD000FF','#E6E600FF','#E8C32EFF','#EBB25EFF','#EDB48EFF','#F0C9C0FF','#F2F2F2FF') # terrain.colors(9)
+cp.gry <- c('#4D4D4D','#6F6F6F','#888888','#9D9D9D','#AEAEAE','#BEBEBE','#CCCCCC','#D9D9D9','#E6E6E6') # gray.colors(9)
+cp.jet <- c('#0000FF','#0055FF','#00AAFF','#00FFFF','#55FFAA','#AAFF55','#FFFF00','#FFAA00','#FF5500') # matlab::jet.colors(9)
+cp.mat <- c('#0000AA','#0055FF','#00AAFF','#55FFFF','#AAFFAA','#FFFF55','#FFAA00','#FF5500','#AA0000') # matlab::matlab.like(9)
+cp.b2r <- c('#0000FF','#0040FF','#0080FF','#00BFFF','#00FFFF','#FFBF00','#FF8000','#FF4000','#FF0000') # colorRamps::blue2red(9)
+cp.spe <- c('#D53E4F','#F46D43','#FDAE61','#FEE08B','#FFFFBF','#E6F598','#ABDDA4','#66C2A5','#3288BD') # RColorBrewer::brewer.pal(9, 'Spectral')
 
+# select color palette
+c <- switch(p,
+			'viridis' = cp.vir,
+			'magma' = cp.mag,
+			'inferno' = cp.inf,
+			'plasma' = cp.pla,
+			'rainbow' = cp.rai,
+			'terrain' = cp.ter,
+			'grayscale' = cp.gry,
+			'jet' = cp.jet,
+			'matlab' = cp.mat,
+			'blue2red' = cp.b2r,
+			'spectral' = cp.spe)
+
+if (is.null(c)) stop('incorrect color palette choice.', call. = F)
+
+# reverse color palette
+if (r) c <- rev(c)
+
+# set window dimensions
 X11(width = w, height = h)
-levelplot(r, margin = F, col.regions = 	c, main = n)
+
+# plot raster
+levelplot(ras, margin = F, col.regions = colorRampPalette(c), main = basename(f))
+
+# allow user to close window
 message('Press return to close map...')
 invisible(readLines('stdin', n = 1))
