@@ -12,6 +12,7 @@ opt.list <- list(
 	make_option(c('-b','--band'), type = 'integer', default = 1, metavar = 'INTEGER', help = 'The raster band to plot (default is %default).'),
 	make_option(c('-p','--palette'), type = 'character', default = 'jet', metavar = 'CHARACTER', help = 'Color palette. Options are: jet, viridis, magma, inferno, plasma, rainbow, terrain, grayscale, matlab, blue2red, spectral (default is %default).'),
 	make_option(c('-r','--reverse'), type = 'logical', action = 'store_true', default = F, help = 'Reverse color palette direction.'),
+	make_option(c('-m','--margins'), type = 'logical', action = 'store_true', default = F, help = 'Plot XY histograms in margins.'),
 	make_option(c('-x','--xsize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the X direction (i.e., width).'),
 	make_option(c('-y','--ysize'), type = 'integer', metavar = 'INTEGER', help = 'Size in inches of the plotting window in the Y direction (i.e., height).')
 )
@@ -29,6 +30,7 @@ f <- pos.args[1]
 b <- opt.args$band
 p <- opt.args$palette
 r <- opt.args$reverse
+m <- opt.args$margins
 w <- opt.args$xsize
 h <- opt.args$ysize
 
@@ -84,7 +86,7 @@ if (r) c <- rev(c)
 X11(width = w, height = h)
 
 # plot raster
-levelplot(ras, margin = F, col.regions = colorRampPalette(c), main = basename(f))
+levelplot(ras, margin = m, col.regions = colorRampPalette(c), main = basename(f))
 
 # allow user to close window
 message('Press return to close map...')
