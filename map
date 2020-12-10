@@ -82,11 +82,18 @@ if (is.null(c)) stop('incorrect color palette choice.', call. = F)
 # reverse color palette
 if (r) c <- rev(c)
 
+# title
+if (ras@file@nbands > 1) {
+	t <- paste(basename(f), '- Band', b)
+} else {
+	t <- basename(f)
+}
+
 # set window dimensions
 X11(width = w, height = h)
 
 # plot raster
-levelplot(ras, margin = m, col.regions = colorRampPalette(c), main = basename(f))
+levelplot(ras, margin = m, col.regions = colorRampPalette(c), main = t)
 
 # allow user to close window
 message('Press return to close map...')
