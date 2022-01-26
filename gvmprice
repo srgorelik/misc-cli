@@ -1,0 +1,28 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library(optparse))
+
+opt.list <- list(
+	make_option(c('-c','--cpu'), type = 'numeric', default = 1, metavar = 'NUM', help = 'Number of vCPUs (default is %default)'),
+	make_option(c('-r','--reg-mem'), type = 'numeric', default = 3.75, metavar = 'NUM', help = 'Amount of memory in GBs (default is %default)'),
+	make_option(c('-e','--ext-mem'), type = 'numeric', default = 0, metavar = 'NUM', help = 'Amount of extended memory in GBs (default is %default)'),
+	make_option(c('-n','--hrs'), type = 'numeric', default = 1, metavar = 'NUM', help = 'Number of hours (default is %default)')
+)
+
+opt.parser <- OptionParser(option_list = opt.list, usage = 'usage: %prog [options]\n', description = 'Estimates price of a custom Google Compute Engine VM based on\nN1 machine-type pricing in us-east1 region updated Jan 2022:\nhttps://cloud.google.com/compute/all-pricing#general_purpose')
+
+args <- parse_args(opt.parser, positional_arguments = F, convert_hyphens_to_underscores = T)
+
+num.cpu <- args$cpu
+reg.mem.gb <- args$reg_mem
+ext.mem.gb <- args$ext_mem
+num.hrs <- args$hrs
+
+# CPU = $0.033174 per CPU per hour
+# memory = $0.004446 per GB per hour
+# extended memory = $0.009550 per GB per hour
+
+price.num <- (num.cpu * 0.033174 * num.hrs) + (reg.mem.gb * 0.004446 * num.hrs) + (ext.mem.gb * 0.009550 * num.hrs)
+
+price.str <- paste0('$', round(price.num, 2))
+cat(price.str, fill = T)
