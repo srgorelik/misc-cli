@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+# opens current git repo in github in web browser from the command-line
+# must be executed from within a repo to work
+# written by sgorelik, 9/27/24
+# adapted from https://superuser.com/a/547674 
+# and https://dev.to/spencerlepine/quickly-open-github-repo-in-browser-from-terminal-oal
+
+REMOTE=$(git remote -v | awk '/origin.*push/ {print $2}')
+GITPATH="git@github.com:"
+HTTPS="https://github.com/"
+URL=${REMOTE/$GITPATH/$HTTPS}
+URL2=${URL/".git"/""}
+
+echo "Opening $URL2 ..."
+open $URL2
